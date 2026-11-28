@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\Api\Admin\AccountLinksController as AdminAccountLinksController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Api\Admin\HeroController as AdminHeroController;
+use App\Http\Controllers\Api\Admin\HeroFeaturesController as AdminHeroFeaturesController;
 use App\Http\Controllers\Api\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Api\Admin\SocialLinksController as AdminSocialLinksController;
 use App\Http\Controllers\Api\Admin\TestimonialsController as AdminTestimonialsController;
+use App\Http\Controllers\Api\Public\HeroController as PublicHeroController;
 use App\Http\Controllers\Api\Public\SettingsController as PublicSettingsController;
 use App\Http\Controllers\Api\Public\TestimonialsController as PublicTestimonialsController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +23,7 @@ Route::prefix('v1')->group(function () {
     // ── PUBLIC STOREFRONT ROUTES (No Auth) ───────────────────────────────────
     Route::get('/settings', [PublicSettingsController::class, 'index']);
     Route::get('/testimonials', [PublicTestimonialsController::class, 'index']);
+    Route::get('/hero', [PublicHeroController::class, 'index']);
 
     // ── AUTHENTICATION ROUTES ────────────────────────────────────────────────
     // Throttled to 5 login attempts per minute
@@ -39,6 +43,19 @@ Route::prefix('v1')->group(function () {
         Route::post('/settings/logo', [AdminSettingsController::class, 'uploadLogo']);
         Route::delete('/settings/logo', [AdminSettingsController::class, 'removeLogo']);
         Route::post('/settings/reset', [AdminSettingsController::class, 'reset']);
+
+        // Hero Section & Feature Badges
+        Route::get('/hero', [AdminHeroController::class, 'show']);
+        Route::put('/hero', [AdminHeroController::class, 'update']);
+        Route::post('/hero/background', [AdminHeroController::class, 'uploadBackground']);
+        Route::delete('/hero/background', [AdminHeroController::class, 'removeBackground']);
+        Route::post('/hero/reset', [AdminHeroController::class, 'reset']);
+
+        Route::get('/hero/features', [AdminHeroFeaturesController::class, 'index']);
+        Route::post('/hero/features', [AdminHeroFeaturesController::class, 'store']);
+        Route::post('/hero/features/reorder', [AdminHeroFeaturesController::class, 'reorder']);
+        Route::put('/hero/features/{id}', [AdminHeroFeaturesController::class, 'update']);
+        Route::delete('/hero/features/{id}', [AdminHeroFeaturesController::class, 'destroy']);
 
         // Social Media Links
         Route::get('/social-links', [AdminSocialLinksController::class, 'index']);

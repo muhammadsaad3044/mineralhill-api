@@ -151,6 +151,67 @@ Returns only testimonials with status `Published`, with `featured` testimonials 
   }
   ```
 
+### 2.3 Get Public Hero Section
+Returns the current active hero section configuration with absolute image URLs and only enabled trust badges ordered by `sortOrder`.
+- **Method:** `GET`
+- **URL:** `/hero`
+- **Auth:** None (Public, Cached for 1 hour, auto-invalidated on admin updates)
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": 1,
+      "badgeText": "PURE • PREMIUM • AUTHENTIC",
+      "titleLine1": "NATURAL POWER.",
+      "titleLine2": "PURE SHILAJIT.",
+      "description": "Premium Shilajit crafted for your everyday wellness & vitality.",
+      "ctaText": "Shop Now",
+      "ctaUrl": "#shop",
+      "ctaEnabled": true,
+      "backgroundImage": null,
+      "backgroundImageMobile": null,
+      "overlayOpacity": 0,
+      "textAlign": "left",
+      "isActive": true,
+      "features": [
+        {
+          "id": 1,
+          "icon": "leaf",
+          "title": "100%",
+          "subtitle": "PURE SHILAJIT",
+          "enabled": true,
+          "sortOrder": 1
+        },
+        {
+          "id": 2,
+          "icon": "diamond",
+          "title": "PREMIUM",
+          "subtitle": "QUALITY",
+          "enabled": true,
+          "sortOrder": 2
+        },
+        {
+          "id": 3,
+          "icon": "flask",
+          "title": "LAB",
+          "subtitle": "TESTED",
+          "enabled": true,
+          "sortOrder": 3
+        },
+        {
+          "id": 4,
+          "icon": "shield",
+          "title": "AUTHENTIC",
+          "subtitle": "SOURCE",
+          "enabled": true,
+          "sortOrder": 4
+        }
+      ]
+    }
+  }
+  ```
+
 ---
 
 ## 3. Admin Site Settings Management
@@ -524,3 +585,247 @@ Returns only testimonials with status `Published`, with `featured` testimonials 
     "deletedCount": 1
   }
   ```
+
+---
+
+## 7. Admin Hero Section & Trust Badges Management
+
+### 7.1 Get Hero Section (Admin View)
+Returns full hero section details including all features (both enabled and disabled).
+- **Method:** `GET`
+- **URL:** `/admin/hero`
+- **Auth:** `Bearer <token>`
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": 1,
+      "badgeText": "PURE • PREMIUM • AUTHENTIC",
+      "titleLine1": "NATURAL POWER.",
+      "titleLine2": "PURE SHILAJIT.",
+      "description": "Premium Shilajit crafted for your everyday wellness & vitality.",
+      "ctaText": "Shop Now",
+      "ctaUrl": "#shop",
+      "ctaEnabled": true,
+      "backgroundImage": null,
+      "backgroundImageMobile": null,
+      "overlayOpacity": 0,
+      "textAlign": "left",
+      "isActive": true,
+      "features": [
+        {
+          "id": 1,
+          "icon": "leaf",
+          "title": "100%",
+          "subtitle": "PURE SHILAJIT",
+          "enabled": true,
+          "sortOrder": 1
+        }
+      ]
+    }
+  }
+  ```
+
+### 7.2 Update Hero Content & Settings
+Updates text, CTA, alignment, opacity, and active state.
+- **Method:** `PUT`
+- **URL:** `/admin/hero`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):** (Supports camelCase or snake_case)
+  ```json
+  {
+    "titleLine1": "NATURAL POWER.",
+    "titleLine2": "PURE SHILAJIT.",
+    "badgeText": "PURE • PREMIUM • AUTHENTIC",
+    "description": "Premium Shilajit crafted for your everyday wellness & vitality.",
+    "ctaText": "Shop Now",
+    "ctaUrl": "#shop",
+    "ctaEnabled": true,
+    "overlayOpacity": 15,
+    "textAlign": "left",
+    "isActive": true
+  }
+  ```
+- **Validation Rules:**
+  - `titleLine1` / `title_line_1`: Required string, max 60 characters.
+  - `titleLine2` / `title_line_2`: Required string, max 60 characters.
+  - `badgeText` / `badge_text`: Nullable string, max 60 characters.
+  - `description`: Nullable text, max 250 characters.
+  - `ctaText` / `cta_text`: Nullable string, max 30 characters.
+  - `ctaUrl` / `cta_url`: Nullable string, max 255 characters. Accepts exactly three valid formats:
+    1. Internal path starting with `/` (e.g. `/shop`, `/products`).
+    2. In-page anchor starting with `#` containing only letters, digits, hyphens, and underscores (e.g. `#shop`, `#benefits-section`).
+    3. Full `http://` or `https://` URL (e.g. `https://example.com/store`).
+    *All other schemes and formats (`javascript:`, `data:`, `mailto:`, empty whitespace, or strings without a valid prefix) are rejected with HTTP 422.*
+  - `ctaEnabled` / `cta_enabled`: Nullable boolean (default: true).
+  - `overlayOpacity` / `overlay_opacity`: Nullable integer between 0 and 100.
+  - `textAlign` / `text_align`: Nullable string, either `left` or `center`.
+  - `isActive` / `is_active`: Nullable boolean.
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Hero section updated successfully.",
+    "data": { ... }
+  }
+  ```
+
+### 7.3 Upload Hero Background Image
+Uploads desktop or mobile background image. Removes previous image from disk if replaced.
+- **Method:** `POST`
+- **URL:** `/admin/hero/background`
+- **Auth:** `Bearer <token>`
+- **Content-Type:** `multipart/form-data`
+- **Request Parameters:**
+  - `image`: File (JPG, JPEG, PNG, WEBP; max 5 MB). SVG is rejected.
+  - `type`: string (`desktop` or `mobile`, default: `desktop`).
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Hero background image uploaded successfully.",
+    "data": {
+      "id": 1,
+      "backgroundImage": "http://localhost:8000/storage/hero/hero_bg_abc123.jpg",
+      "backgroundImageMobile": null,
+      ...
+    }
+  }
+  ```
+
+### 7.4 Remove Hero Background Image
+Removes the custom background image from storage and sets its database path to `null`.
+- **Method:** `DELETE`
+- **URL:** `/admin/hero/background?type=desktop` (or `?type=mobile`)
+- **Auth:** `Bearer <token>`
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Hero background image removed successfully.",
+    "data": {
+      "id": 1,
+      "backgroundImage": null,
+      ...
+    }
+  }
+  ```
+
+### 7.5 Reset Hero Section & Features
+Restores default texts, alignments, sets background images to null (deleting uploaded files), and resets trust badges to the 4 default features.
+- **Method:** `POST`
+- **URL:** `/admin/hero/reset`
+- **Auth:** `Bearer <token>`
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Hero section and features reset to default successfully.",
+    "data": { ... }
+  }
+  ```
+
+### 7.6 List Hero Features (Trust Badges)
+- **Method:** `GET`
+- **URL:** `/admin/hero/features`
+- **Auth:** `Bearer <token>`
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "id": 1,
+        "icon": "leaf",
+        "title": "100%",
+        "subtitle": "PURE SHILAJIT",
+        "enabled": true,
+        "sortOrder": 1
+      }
+    ]
+  }
+  ```
+
+### 7.7 Create Hero Feature
+Allowed icons: `leaf`, `diamond`, `flask`, `shield`, `star`, `heart`, `truck`, `award`, `check`, `sparkles`. Maximum 6 features allowed.
+- **Method:** `POST`
+- **URL:** `/admin/hero/features`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):**
+  ```json
+  {
+    "icon": "award",
+    "title": "GOLD GRADE",
+    "subtitle": "100% PURITY",
+    "enabled": true
+  }
+  ```
+- **Success Response (`201 Created`):**
+  ```json
+  {
+    "success": true,
+    "message": "Hero feature created successfully.",
+    "data": {
+      "id": 5,
+      "icon": "award",
+      "title": "GOLD GRADE",
+      "subtitle": "100% PURITY",
+      "enabled": true,
+      "sortOrder": 5
+    }
+  }
+  ```
+
+### 7.8 Update Hero Feature
+- **Method:** `PUT`
+- **URL:** `/admin/hero/features/{id}`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):**
+  ```json
+  {
+    "title": "PREMIUM GRADE",
+    "enabled": false
+  }
+  ```
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Hero feature updated successfully.",
+    "data": { ... }
+  }
+  ```
+
+### 7.9 Delete Hero Feature
+- **Method:** `DELETE`
+- **URL:** `/admin/hero/features/{id}`
+- **Auth:** `Bearer <token>`
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Hero feature deleted successfully.",
+    "id": 5
+  }
+  ```
+
+### 7.10 Reorder Hero Features
+- **Method:** `POST`
+- **URL:** `/admin/hero/features/reorder`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):**
+  ```json
+  {
+    "ids": [4, 1, 2, 3]
+  }
+  ```
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Hero features reordered successfully.",
+    "data": [ ...reordered features list... ]
+  }
+  ```
+
