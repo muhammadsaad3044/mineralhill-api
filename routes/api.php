@@ -4,10 +4,14 @@ use App\Http\Controllers\Api\Admin\AccountLinksController as AdminAccountLinksCo
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\HeroController as AdminHeroController;
 use App\Http\Controllers\Api\Admin\HeroFeaturesController as AdminHeroFeaturesController;
+use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\Admin\ProductImagesController as AdminProductImagesController;
+use App\Http\Controllers\Api\Admin\ProductSizesController as AdminProductSizesController;
 use App\Http\Controllers\Api\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Api\Admin\SocialLinksController as AdminSocialLinksController;
 use App\Http\Controllers\Api\Admin\TestimonialsController as AdminTestimonialsController;
 use App\Http\Controllers\Api\Public\HeroController as PublicHeroController;
+use App\Http\Controllers\Api\Public\ProductController as PublicProductController;
 use App\Http\Controllers\Api\Public\SettingsController as PublicSettingsController;
 use App\Http\Controllers\Api\Public\TestimonialsController as PublicTestimonialsController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +28,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/settings', [PublicSettingsController::class, 'index']);
     Route::get('/testimonials', [PublicTestimonialsController::class, 'index']);
     Route::get('/hero', [PublicHeroController::class, 'index']);
+    Route::get('/product', [PublicProductController::class, 'index']);
 
     // ── AUTHENTICATION ROUTES ────────────────────────────────────────────────
     // Throttled to 5 login attempts per minute
@@ -56,6 +61,24 @@ Route::prefix('v1')->group(function () {
         Route::post('/hero/features/reorder', [AdminHeroFeaturesController::class, 'reorder']);
         Route::put('/hero/features/{id}', [AdminHeroFeaturesController::class, 'update']);
         Route::delete('/hero/features/{id}', [AdminHeroFeaturesController::class, 'destroy']);
+
+        // Featured Product Management
+        Route::get('/product', [AdminProductController::class, 'show']);
+        Route::put('/product', [AdminProductController::class, 'update']);
+        Route::post('/product/reset', [AdminProductController::class, 'reset']);
+
+        Route::get('/product/sizes', [AdminProductSizesController::class, 'index']);
+        Route::post('/product/sizes', [AdminProductSizesController::class, 'store']);
+        Route::post('/product/sizes/reorder', [AdminProductSizesController::class, 'reorder']);
+        Route::post('/product/sizes/{id}/default', [AdminProductSizesController::class, 'setDefault']);
+        Route::put('/product/sizes/{id}', [AdminProductSizesController::class, 'update']);
+        Route::delete('/product/sizes/{id}', [AdminProductSizesController::class, 'destroy']);
+
+        Route::get('/product/images', [AdminProductImagesController::class, 'index']);
+        Route::post('/product/images', [AdminProductImagesController::class, 'store']);
+        Route::post('/product/images/reorder', [AdminProductImagesController::class, 'reorder']);
+        Route::put('/product/images/{id}', [AdminProductImagesController::class, 'update']);
+        Route::delete('/product/images/{id}', [AdminProductImagesController::class, 'destroy']);
 
         // Social Media Links
         Route::get('/social-links', [AdminSocialLinksController::class, 'index']);

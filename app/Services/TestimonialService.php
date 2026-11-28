@@ -207,9 +207,15 @@ class TestimonialService
      */
     public function bulkStatus(array $ids, string $status): int
     {
-        return Testimonial::whereIn('id', $ids)->update([
+        $updated = Testimonial::whereIn('id', $ids)->update([
             'status' => strtolower(trim($status)),
         ]);
+
+        Cache::forget(self::CACHE_ALL_KEY);
+        Cache::forget(self::CACHE_FEATURED_KEY);
+        Cache::forget('public_featured_product');
+
+        return $updated;
     }
 
     /**

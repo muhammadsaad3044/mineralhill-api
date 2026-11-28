@@ -33,11 +33,13 @@ class Testimonial extends Model
         static::saved(function () {
             Cache::forget('public_testimonials_all');
             Cache::forget('public_testimonials_featured');
+            Cache::forget('public_featured_product');
         });
 
         static::deleted(function () {
             Cache::forget('public_testimonials_all');
             Cache::forget('public_testimonials_featured');
+            Cache::forget('public_featured_product');
         });
     }
 }

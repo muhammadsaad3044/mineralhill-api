@@ -829,3 +829,284 @@ Allowed icons: `leaf`, `diamond`, `flask`, `shield`, `star`, `heart`, `truck`, `
   }
   ```
 
+---
+
+## 8. Featured Product Management
+
+### 8.1 Public Featured Product
+Returns the single featured product details with enabled sizes (ordered by sort order), product images with absolute URLs, and dynamic ratings.
+- **Method:** `GET`
+- **URL:** `/product`
+- **Auth:** Public (No token required)
+- **Cache:** Cached for 1 hour; automatically invalidated whenever product, sizes, images, or testimonials change.
+- **Rating Calculation:**
+  - `auto`: Computes real-time average (rounded to 1 decimal place) and count of all testimonials with `status = 'published'`.
+  - `manual`: Uses `rating_value` and `rating_count` configured by admin.
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": 1,
+      "eyebrowText": "PURE HIMALAYAN POWER",
+      "titleLine1": "MINERAL HILL",
+      "titleLine2": "SHILAJIT",
+      "description": "Pure Himalayan Shilajit, rich in essential minerals, crafted to support your energy, stamina and overall wellness — naturally.",
+      "currencySymbol": "$",
+      "ratingMode": "auto",
+      "rating": {
+        "value": 4.9,
+        "count": 128
+      },
+      "ctaText": "Shop Now",
+      "whatsappMessageTemplate": "Hello! I would like to order:\nProduct: {product}\nSize: {size}\nQuantity: {quantity}\nPrice: {currency}{price} each\nTotal: {currency}{total}\nPlease confirm availability and delivery details.",
+      "showQuantitySelector": true,
+      "isActive": true,
+      "sizes": [
+        {
+          "id": 1,
+          "label": "15g",
+          "price": "208.00",
+          "compareAtPrice": "308.00",
+          "enabled": true,
+          "isDefault": true,
+          "sortOrder": 1
+        },
+        {
+          "id": 2,
+          "label": "30g",
+          "price": "360.00",
+          "compareAtPrice": "499.00",
+          "enabled": true,
+          "isDefault": false,
+          "sortOrder": 2
+        }
+      ],
+      "images": [
+        {
+          "id": 1,
+          "url": "http://localhost:8000/storage/products/product_abc123.webp",
+          "altText": "Mineral Hill Shilajit Jar",
+          "sortOrder": 1
+        }
+      ]
+    }
+  }
+  ```
+
+---
+
+### 8.2 Admin Featured Product Details
+Returns all product details, including all sizes (both enabled and disabled) and all images.
+- **Method:** `GET`
+- **URL:** `/admin/product`
+- **Auth:** `Bearer <token>`
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": 1,
+      "eyebrowText": "PURE HIMALAYAN POWER",
+      "titleLine1": "MINERAL HILL",
+      "titleLine2": "SHILAJIT",
+      "description": "Pure Himalayan Shilajit...",
+      "currencySymbol": "$",
+      "ratingMode": "auto",
+      "ratingValue": 4.9,
+      "ratingCount": 128,
+      "rating": {
+        "value": 4.9,
+        "count": 128
+      },
+      "ctaText": "Shop Now",
+      "whatsappMessageTemplate": "Hello! I would like to order:\nProduct: {product}\nSize: {size}\nQuantity: {quantity}\nPrice: {currency}{price} each\nTotal: {currency}{total}\nPlease confirm availability and delivery details.",
+      "showQuantitySelector": true,
+      "isActive": true,
+      "sizes": [ ...all sizes... ],
+      "images": [ ...all images... ]
+    }
+  }
+  ```
+
+---
+
+### 8.3 Update Featured Product
+Update text, rating settings, CTA, and WhatsApp message template.
+- **Method:** `PUT`
+- **URL:** `/admin/product`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):**
+  ```json
+  {
+    "eyebrowText": "PURE HIMALAYAN POWER",
+    "titleLine1": "MINERAL HILL",
+    "titleLine2": "SHILAJIT",
+    "description": "Pure Himalayan Shilajit, rich in essential minerals...",
+    "currencySymbol": "$",
+    "ratingMode": "manual",
+    "ratingValue": 4.9,
+    "ratingCount": 250,
+    "ctaText": "Order on WhatsApp",
+    "whatsappMessageTemplate": "Hello! I want {quantity} of {product} ({size}) for {total}.",
+    "showQuantitySelector": true,
+    "isActive": true
+  }
+  ```
+- **Validation Rules:**
+  - `titleLine1` / `title_line_1`: Required, string, max 60.
+  - `titleLine2` / `title_line_2`: Required, string, max 60.
+  - `eyebrowText` / `eyebrow_text`: Nullable, string, max 60.
+  - `description`: Nullable, string, max 400.
+  - `currencySymbol` / `currency_symbol`: Required, string, max 10.
+  - `ratingMode` / `rating_mode`: Required, in: `auto`, `manual`.
+  - `ratingValue` / `rating_value`: Required if `ratingMode === 'manual'`, numeric between 0.0 and 5.0.
+  - `ratingCount` / `rating_count`: Required if `ratingMode === 'manual'`, integer >= 0.
+  - `ctaText` / `cta_text`: Nullable, string, max 30.
+  - `whatsappMessageTemplate` / `whatsapp_message_template`: Required, string, max 600.
+    - **Allowed Placeholders:** `{product}`, `{size}`, `{quantity}`, `{price}`, `{total}`, `{currency}`.
+    - Any unknown placeholder (e.g. `{foo}`) is rejected with HTTP `422`.
+    - Must contain at least `{size}` and `{quantity}`.
+    - `{product}` resolves to `title_line_1 + " " + title_line_2`.
+  - `showQuantitySelector` / `show_quantity_selector`: Boolean.
+  - `isActive` / `is_active`: Boolean.
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Product details updated successfully.",
+    "data": { ...product resource... }
+  }
+  ```
+
+---
+
+### 8.4 Reset Product to Defaults
+Resets the product details, deletes all uploaded product images from storage, and restores the 4 default sizes (`15g`, `30g`, `50g`, `100g`).
+- **Method:** `POST`
+- **URL:** `/admin/product/reset`
+- **Auth:** `Bearer <token>`
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Product reset to defaults successfully.",
+    "data": { ...default product resource... }
+  }
+  ```
+
+---
+
+### 8.5 Product Sizes Management
+
+#### List Sizes
+- **Method:** `GET`
+- **URL:** `/admin/product/sizes`
+- **Auth:** `Bearer <token>`
+
+#### Create Size
+- **Method:** `POST`
+- **URL:** `/admin/product/sizes`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):**
+  ```json
+  {
+    "label": "250g",
+    "price": 2200.00,
+    "compareAtPrice": 2800.00,
+    "enabled": true,
+    "isDefault": false
+  }
+  ```
+- **Validation Rules:**
+  - Max 8 sizes allowed.
+  - `label`: Required, string, max 20, unique in `product_sizes`.
+  - `price`: Required, numeric, between 0.01 and 999999.
+  - `compareAtPrice`: Nullable, numeric, must be greater than `price`.
+  - `enabled`: Boolean (default true).
+  - `isDefault`: Boolean. If set to true, any other existing default is automatically unset.
+
+#### Update Size
+- **Method:** `PUT`
+- **URL:** `/admin/product/sizes/{id}`
+- **Auth:** `Bearer <token>`
+- **Validation Rules:**
+  - Cannot disable the only remaining enabled size (at least 1 enabled size must remain).
+  - Disabling the default size automatically switches default to the first remaining enabled size.
+
+#### Delete Size
+- **Method:** `DELETE`
+- **URL:** `/admin/product/sizes/{id}`
+- **Auth:** `Bearer <token>`
+- **Rules:**
+  - Cannot delete the only remaining enabled size.
+  - Deleting the default size automatically switches default to the next enabled size.
+
+#### Reorder Sizes
+- **Method:** `POST`
+- **URL:** `/admin/product/sizes/reorder`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):**
+  ```json
+  {
+    "ids": [4, 3, 2, 1]
+  }
+  ```
+
+#### Set Default Size
+- **Method:** `POST`
+- **URL:** `/admin/product/sizes/{id}/default`
+- **Auth:** `Bearer <token>`
+- **Rules:**
+  - Size must be enabled to be set as default.
+
+---
+
+### 8.6 Product Images Management
+
+#### List Images
+- **Method:** `GET`
+- **URL:** `/admin/product/images`
+- **Auth:** `Bearer <token>`
+
+#### Upload Image
+- **Method:** `POST`
+- **URL:** `/admin/product/images`
+- **Auth:** `Bearer <token>`
+- **Content-Type:** `multipart/form-data`
+- **Parameters:**
+  - `image`: Required file (`jpg`, `jpeg`, `png`, `webp` only; SVGs rejected; max 5120 KB / 5 MB).
+  - `altText` / `alt_text`: Nullable string, max 120.
+- **Rules:**
+  - Max 8 images allowed.
+  - Automatically assigned the next `sort_order`. First image is the main gallery image.
+
+#### Update Image Alt Text
+- **Method:** `PUT`
+- **URL:** `/admin/product/images/{id}`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):**
+  ```json
+  {
+    "altText": "Updated alt text description"
+  }
+  ```
+
+#### Delete Image
+- **Method:** `DELETE`
+- **URL:** `/admin/product/images/{id}`
+- **Auth:** `Bearer <token>`
+- **Behavior:**
+  - Deletes the file from disk storage (`storage/app/public/products/...`) and deletes the database record.
+
+#### Reorder Images
+- **Method:** `POST`
+- **URL:** `/admin/product/images/reorder`
+- **Auth:** `Bearer <token>`
+- **Request Body (JSON):**
+  ```json
+  {
+    "ids": [3, 1, 2]
+  }
+  ```
+
